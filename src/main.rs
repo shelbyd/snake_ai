@@ -4,26 +4,22 @@ use agents::*;
 mod gameplay;
 use gameplay::*;
 
+mod render;
+use render::*;
+
 fn main() {
-    let mut game = SnakeGame::random(32, 18);
+    let mut game = SnakeGame::random(16, 10);
     let mut agent = agents::SimplePath::default();
+    let mut renderer = render::Terminal::default();
 
     loop {
         let action = agent.action(&game);
-        let term = game.do_action(action);
-
-        if game.moves % 1000 == 0 {
-            clearscreen::clear().expect("failed to clear screen");
-            game.dbg_print();
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-
-        if let Some(terminal) = term {
-            clearscreen::clear().expect("failed to clear screen");
-            game.dbg_print();
+        if let Some(terminal) = game.do_action(action) {
+            renderer.render(&game);
             dbg!(terminal);
             break;
         }
 
+        renderer.render(&game);
     }
 }

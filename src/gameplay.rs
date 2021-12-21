@@ -53,7 +53,7 @@ impl SnakeGame {
             .choose(rng)
     }
 
-    fn cell_occupant(&self, cell: Cell) -> Option<Occupant> {
+    pub fn cell_occupant(&self, cell: Cell) -> Option<Occupant> {
         if self.apple == cell {
             return Some(Occupant::Apple);
         }
@@ -104,50 +104,6 @@ impl SnakeGame {
             return None;
         }
         Some(next)
-    }
-
-    pub fn dbg_print(&self) {
-        use std::fmt::Write;
-
-        let mut s = String::with_capacity((self.width as usize + 2) * (self.height as usize + 2));
-        write!(&mut s, "{}/{}\n", self.score, self.moves).unwrap();
-
-        for _ in 0..(self.width + 2) {
-            s.push('#');
-        }
-        s.push('\n');
-
-        for row in 0..self.height {
-            s.push('#');
-            for col in 0..self.width {
-                let cell = Cell(col, row);
-                let c = match self.cell_occupant(cell) {
-                    None => ' ',
-                    Some(Occupant::Body) => {
-                        if self.head() == cell {
-                            match self.heading {
-                                Heading::North => '^',
-                                Heading::South => 'v',
-                                Heading::East => '>',
-                                Heading::West => '<',
-                            }
-                        } else {
-                            '+'
-                        }
-                    }
-                    Some(Occupant::Apple) => '*',
-                };
-                s.push(c);
-            }
-            s.push('#');
-            s.push('\n');
-        }
-
-        for _ in 0..(self.width + 2) {
-            s.push('#');
-        }
-
-        eprintln!("{}", s);
     }
 }
 

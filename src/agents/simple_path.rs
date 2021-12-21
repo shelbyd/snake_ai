@@ -9,6 +9,8 @@ impl Agent for SimplePath {
         use Action::*;
         use Heading::*;
 
+        assert!(game.height % 2 == 0);
+
         match (game.head(), game.heading) {
             (Cell(0, 0), h) => h.turn_towards(East).unwrap_or(TurnLeft),
             (Cell(0, _), h) => h.turn_towards(North).unwrap_or(TurnLeft),
