@@ -9,9 +9,10 @@ use render::*;
 
 fn main() {
     let mut game = SnakeGame::random(30, 30);
-    let mut agent = agents::greedy::Greedy::default();
+    let mut agent = agents::tree_search::TreeSearch::default();
     let mut renderer = render::Terminal {
-        sleep_time: std::time::Duration::from_millis(10),
+        sleep_time: std::time::Duration::from_millis(1),
+        render_every: 100,
         ..Default::default()
     };
 

@@ -2,6 +2,7 @@ use crate::gameplay::*;
 use rand::prelude::*;
 
 pub mod greedy;
+pub mod tree_search;
 
 pub mod simple_path;
 pub use simple_path::*;

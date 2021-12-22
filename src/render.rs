@@ -54,7 +54,7 @@ pub fn dbg_print(game: &SnakeGame) {
                         '+'
                     }
                 }
-                Some(Occupant::Apple) => '*',
+                Some(Occupant::Apple) => 'O',
             };
             s.push(c);
         }

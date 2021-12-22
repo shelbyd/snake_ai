@@ -1,7 +1,7 @@
 use rand::prelude::*;
 use std::collections::VecDeque;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct SnakeGame {
     pub score: usize,
     pub moves: usize,
@@ -10,7 +10,7 @@ pub struct SnakeGame {
     pub height: u8,
 
     pub apple: Cell,
-    body: VecDeque<Cell>,
+    pub body: VecDeque<Cell>,
     pub heading: Heading,
 }
 
@@ -119,6 +119,18 @@ impl Cell {
             (_, Greater) => Some(Heading::North),
         }
     }
+
+    pub fn taxicab_distance_to(self, other: Cell) -> u8 {
+        abs_diff(self.0, other.0) + abs_diff(self.1, other.1)
+    }
+}
+
+fn abs_diff(a: u8, b: u8) -> u8 {
+    if a > b {
+        a - b
+    } else {
+        b - a
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -126,6 +138,12 @@ pub enum Action {
     TurnLeft,
     TurnRight,
     GoStraight,
+}
+
+impl Action {
+    pub fn iter() -> impl Iterator<Item = Action> {
+        [Action::GoStraight, Action::TurnLeft, Action::TurnRight].into_iter()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
@@ -155,6 +173,10 @@ impl Default for Heading {
 }
 
 impl Heading {
+    pub fn iter() -> impl Iterator<Item = Heading> {
+        [Heading::North, Heading::South, Heading::East, Heading::West].into_iter()
+    }
+
     fn after(self, action: Action) -> Heading {
         use Heading::*;
 
@@ -175,7 +197,7 @@ impl Heading {
         }
     }
 
-    fn move_(self, cell: Cell) -> Option<Cell> {
+    pub fn move_(self, cell: Cell) -> Option<Cell> {
         match self {
             Heading::West => Some(Cell(cell.0.checked_sub(1)?, cell.1)),
             Heading::East => Some(Cell(cell.0.checked_add(1)?, cell.1)),
