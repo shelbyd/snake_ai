@@ -1,9 +1,6 @@
 use rand::prelude::*;
 use std::collections::VecDeque;
 
-#[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct Cell(pub u8, pub u8);
-
 #[derive(Default, Debug)]
 pub struct SnakeGame {
     pub score: usize,
@@ -12,7 +9,7 @@ pub struct SnakeGame {
     pub width: u8,
     pub height: u8,
 
-    apple: Cell,
+    pub apple: Cell,
     body: VecDeque<Cell>,
     pub heading: Heading,
 }
@@ -104,6 +101,23 @@ impl SnakeGame {
             return None;
         }
         Some(next)
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Cell(pub u8, pub u8);
+
+impl Cell {
+    pub fn heading_toward(self, other: Cell) -> Option<Heading> {
+        use std::cmp::Ordering::*;
+
+        match (self.0.cmp(&other.0), self.1.cmp(&other.1)) {
+            (Equal, Equal) => None,
+            (Less, _) => Some(Heading::East),
+            (Greater, _) => Some(Heading::West),
+            (_, Less) => Some(Heading::South),
+            (_, Greater) => Some(Heading::North),
+        }
     }
 }
 

@@ -1,7 +1,9 @@
 use crate::gameplay::*;
 use rand::prelude::*;
 
-mod simple_path;
+pub mod greedy;
+
+pub mod simple_path;
 pub use simple_path::*;
 
 pub trait Agent {

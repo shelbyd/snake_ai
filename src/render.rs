@@ -1,17 +1,27 @@
 use crate::{Cell, Heading, Occupant, SnakeGame};
+use std::time::Duration;
 
 pub trait Renderer {
-    fn render(&mut self, game: &SnakeGame);
+    fn render(&mut self, game: &SnakeGame, final_: bool);
 }
 
 #[derive(Default)]
-pub struct Terminal;
+pub struct Terminal {
+    pub render_every: usize,
+    pub sleep_time: Duration,
+}
 
 impl Renderer for Terminal {
-    fn render(&mut self, game: &SnakeGame) {
+    fn render(&mut self, game: &SnakeGame, final_: bool) {
+        let should_render =
+            final_ || (self.render_every == 0 || game.moves % self.render_every == 0);
+        if !should_render {
+            return;
+        }
+
         clearscreen::clear().expect("failed to clear screen");
         dbg_print(game);
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(self.sleep_time);
     }
 }
 
