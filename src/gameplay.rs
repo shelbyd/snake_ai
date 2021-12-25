@@ -1,7 +1,7 @@
-use rand::prelude::*;
+use rand::{prelude::*, rngs::SmallRng};
 use std::collections::VecDeque;
 
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SnakeGame {
     pub score: usize,
     pub moves: usize,
@@ -12,6 +12,8 @@ pub struct SnakeGame {
     pub apple: Cell,
     pub body: VecDeque<Cell>,
     pub heading: Heading,
+
+    rng: SmallRng,
 }
 
 impl SnakeGame {
@@ -19,32 +21,44 @@ impl SnakeGame {
         let mut game = SnakeGame {
             width,
             height,
-            ..Default::default()
+            rng: SmallRng::from_entropy(),
+
+            score: 0,
+            moves: 0,
+            apple: Cell::default(),
+            body: VecDeque::new(),
+            heading: Heading::default(),
         };
-        let mut rng = thread_rng();
-        game.apple = game.gen_cell(&mut rng);
-        game.body.push_back(game.gen_open_cell(&mut rng).unwrap());
+
+        game.apple = game.gen_cell();
+
+        let head = game.gen_open_cell().unwrap();
+        game.body.push_back(head);
+
         game.heading = [Heading::North, Heading::South, Heading::East, Heading::West]
-            .choose(&mut rng)
+            .choose(&mut game.rng)
             .unwrap()
             .clone();
 
         game
     }
 
-    fn gen_cell(&self, rng: &mut impl Rng) -> Cell {
-        let x = rng.gen_range(0..self.width);
-        let y = rng.gen_range(0..self.height);
+    fn gen_cell(&mut self) -> Cell {
+        let x = self.rng.gen_range(0..self.width);
+        let y = self.rng.gen_range(0..self.height);
         Cell(x, y)
     }
 
-    fn gen_open_cell(&self, rng: &mut impl Rng) -> Option<Cell> {
-        let cell = self.gen_cell(rng);
+    fn gen_open_cell(&mut self) -> Option<Cell> {
+        let cell = self.gen_cell();
         if self.cell_occupant(cell) == None {
             return Some(cell);
         }
 
-        self.open_cells().choose(rng)
+        self.open_cells()
+            .collect::<Vec<_>>()
+            .choose(&mut self.rng)
+            .cloned()
     }
 
     pub fn open_cells(&self) -> impl Iterator<Item = Cell> + '_ {
@@ -83,7 +97,7 @@ impl SnakeGame {
             Some(Occupant::Apple) => {
                 self.score += 1;
                 self.body.push_back(self.apple);
-                self.apple = match self.gen_open_cell(&mut rand::thread_rng()) {
+                self.apple = match self.gen_open_cell() {
                     Some(c) => c,
                     None => return Some(Terminal::Won),
                 };
@@ -92,6 +106,19 @@ impl SnakeGame {
         }
 
         None
+    }
+
+    pub fn do_many(
+        &self,
+        actions: impl IntoIterator<Item = impl core::borrow::Borrow<Action>>,
+    ) -> Result<Self, Terminal> {
+        let mut clone = self.clone();
+        for action in actions {
+            if let Some(term) = clone.do_action(*action.borrow()) {
+                return Err(term);
+            }
+        }
+        Ok(clone)
     }
 
     pub fn head(&self) -> Cell {
@@ -127,6 +154,7 @@ impl Cell {
         abs_diff(self.0, other.0) + abs_diff(self.1, other.1)
     }
 
+    #[allow(unused)]
     pub fn neighbors(self) -> impl Iterator<Item = Cell> {
         Heading::iter().filter_map(move |heading| heading.move_(self))
     }

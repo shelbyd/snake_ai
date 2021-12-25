@@ -10,6 +10,9 @@ pub use keyed_queue::*;
 mod render;
 use render::*;
 
+mod tree_search;
+use tree_search::*;
+
 fn main() {
     let mut game = SnakeGame::random(10, 10);
     let mut agent = agents::average_path::AveragePath::default();

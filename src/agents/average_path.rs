@@ -1,10 +1,8 @@
 use super::Agent;
-use crate::{gameplay::*, KeyedQueue};
+use crate::{gameplay::*, TreeSearch};
 
-use std::{
-    cmp::Reverse,
-    collections::{HashMap, VecDeque},
-};
+use float_ord::FloatOrd;
+use std::{cmp::Reverse, collections::VecDeque};
 
 #[derive(Default)]
 pub struct AveragePath {
@@ -24,73 +22,57 @@ impl Agent for AveragePath {
 
 impl AveragePath {
     fn generate_plan(&self, game: &SnakeGame) -> VecDeque<Action> {
-        let mut queue = KeyedQueue::new();
-        queue.insert(Reverse(0), (game.clone(), VecDeque::<Action>::new()));
+        let search = TreeSearch::new(
+            VecDeque::new(),
+            |actions| Reverse(best_case_score(&actions, game)),
+            |actions| {
+                Action::iter()
+                    .map(|a| actions.iter().cloned().chain([a]).collect())
+                    .filter(|actions| game.do_many(actions).is_ok())
+                    .collect()
+            },
+        );
 
-        let mut best: Option<(f32, VecDeque<Action>)> = None;
+        let must_be_better_than = std::cell::Cell::new(FloatOrd(f32::INFINITY));
 
-        while let Some((game, actions)) = queue.pop() {
-            for action in Action::iter() {
-                let mut new_game = game.clone();
-                match new_game.do_action(action) {
-                    Some(Terminal::Died) => continue,
-                    None | Some(Terminal::Won) => {}
-                }
-
-                let mut actions = actions.clone();
-                actions.push_back(action);
-
-                let just_scored = new_game.score > game.score;
-                if just_scored {
-                    if let Some(moves) = average_moves(&new_game) {
-                        best = best
-                            .into_iter()
-                            .chain(std::iter::once((
-                                actions.len() as f32 + moves,
-                                actions.clone(),
-                            )))
-                            .min_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap());
-                    }
-                } else {
-                    let best_case_moves = actions.len() + best_case_moves_to_go(&new_game, false);
-
-                    let best_case_expected =
-                        best_case_moves as f32 + best_case_average_moves(&new_game);
-                    if let Some((best, _)) = &best {
-                        if best_case_expected > *best {
-                            continue;
-                        }
-                    }
-
-                    queue.insert(Reverse(best_case_moves), (new_game, actions));
-                }
-            }
-        }
-
-        best.unwrap().1
+        return search
+            .take_while(|actions| best_case_score(&actions, game) <= must_be_better_than.get())
+            .filter(|actions| game.do_many(actions).unwrap().score > game.score)
+            .min_by_key(|actions| {
+                let score = actual_score(&actions, game);
+                must_be_better_than.set(std::cmp::min(score, must_be_better_than.get()));
+                score
+            })
+            .expect("No path to apple");
     }
 }
 
-fn best_case_moves_to_go(game: &SnakeGame, just_scored: bool) -> usize {
-    if just_scored {
-        0
-    } else {
-        game.head().taxicab_distance_to(game.apple) as usize
-    }
+fn best_case_score(actions: &VecDeque<Action>, game: &SnakeGame) -> FloatOrd<f32> {
+    let new_game = game.do_many(actions).unwrap();
+    let best_case_moves = actions.len() + new_game.head().taxicab_distance_to(game.apple) as usize;
+    let best_case_expected = best_case_moves as f32 + best_case_average_moves(&new_game);
+    FloatOrd(best_case_expected)
+}
+
+fn best_case_average_moves(_game: &SnakeGame) -> f32 {
+    // TODO(shelbyd): Calculate reachability of other cells.
+    0.
+}
+
+fn actual_score(actions: &VecDeque<Action>, game: &SnakeGame) -> FloatOrd<f32> {
+    let new_game = game.do_many(actions).unwrap();
+    let actual_moves = actions.len() + new_game.head().taxicab_distance_to(game.apple) as usize;
+    FloatOrd(actual_moves as f32 + average_moves(&new_game).unwrap_or(f32::INFINITY))
 }
 
 // Average number of moves required to reach open cells.
 fn average_moves(game: &SnakeGame) -> Option<f32> {
-    let mut move_counts = game
+    let move_counts = game
         .open_cells()
-        .chain(std::iter::once(game.apple))
-        .map(|cell| Some(0))
+        .chain([game.apple])
+        // TODO(shelbyd): Actual calculation.
+        .map(|_cell| Some(0))
         .collect::<Option<Vec<_>>>()?;
 
     Some(move_counts.iter().sum::<usize>() as f32 / move_counts.len() as f32)
-}
-
-fn best_case_average_moves(game: &SnakeGame) -> f32 {
-    // TODO(shelbyd): Calculate reachability of other cells.
-    0.
 }
