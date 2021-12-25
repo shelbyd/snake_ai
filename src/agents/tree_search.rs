@@ -90,13 +90,15 @@ impl State {
             if reached.len() >= n {
                 return true;
             }
-            front.extend(Heading::iter().filter_map(|h| h.move_(cell)).filter(|cell| {
-                match self.game.cell_occupant(*cell) {
-                    None => true,
-                    Some(Occupant::Body) => false,
-                    Some(Occupant::Apple) => true,
-                }
-            }));
+            front.extend(
+                Heading::iter()
+                    .filter_map(|h| h.move_(cell))
+                    .filter(|cell| match self.game.cell_occupant(*cell) {
+                        None => true,
+                        Some(Occupant::Body) => false,
+                        Some(Occupant::Apple) => true,
+                    }),
+            );
         }
 
         reached.len() >= n

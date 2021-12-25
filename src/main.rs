@@ -4,15 +4,18 @@ use agents::*;
 mod gameplay;
 use gameplay::*;
 
+mod keyed_queue;
+pub use keyed_queue::*;
+
 mod render;
 use render::*;
 
 fn main() {
-    let mut game = SnakeGame::random(30, 30);
-    let mut agent = agents::tree_search::TreeSearch::default();
+    let mut game = SnakeGame::random(10, 10);
+    let mut agent = agents::average_path::AveragePath::default();
     let mut renderer = render::Terminal {
-        sleep_time: std::time::Duration::from_millis(1),
-        render_every: 100,
+        sleep_time: std::time::Duration::from_millis(10),
+        render_every: 1,
         ..Default::default()
     };
 

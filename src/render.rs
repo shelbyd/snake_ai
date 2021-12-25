@@ -5,7 +5,6 @@ pub trait Renderer {
     fn render(&mut self, game: &SnakeGame, final_: bool);
 }
 
-#[derive(Default)]
 pub struct Terminal {
     pub render_every: usize,
     pub sleep_time: Duration,
@@ -22,6 +21,15 @@ impl Renderer for Terminal {
         clearscreen::clear().expect("failed to clear screen");
         dbg_print(game);
         std::thread::sleep(self.sleep_time);
+    }
+}
+
+impl Default for Terminal {
+    fn default() -> Self {
+        Terminal {
+            render_every: 1,
+            sleep_time: Duration::from_millis(10),
+        }
     }
 }
 

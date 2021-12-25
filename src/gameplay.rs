@@ -44,10 +44,13 @@ impl SnakeGame {
             return Some(cell);
         }
 
+        self.open_cells().choose(rng)
+    }
+
+    pub fn open_cells(&self) -> impl Iterator<Item = Cell> + '_ {
         (0..self.height)
             .flat_map(|row| (0..self.width).map(move |col| Cell(col, row)))
             .filter(|cell| self.cell_occupant(*cell) == None)
-            .choose(rng)
     }
 
     pub fn cell_occupant(&self, cell: Cell) -> Option<Occupant> {
@@ -122,6 +125,10 @@ impl Cell {
 
     pub fn taxicab_distance_to(self, other: Cell) -> u8 {
         abs_diff(self.0, other.0) + abs_diff(self.1, other.1)
+    }
+
+    pub fn neighbors(self) -> impl Iterator<Item = Cell> {
+        Heading::iter().filter_map(move |heading| heading.move_(self))
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::gameplay::*;
 use rand::prelude::*;
 
+pub mod average_path;
 pub mod greedy;
 pub mod tree_search;
 
