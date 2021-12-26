@@ -67,6 +67,10 @@ impl SnakeGame {
             .filter(|cell| self.cell_occupant(*cell) == None)
     }
 
+    pub fn non_body_cells(&self) -> impl Iterator<Item = Cell> + '_ {
+        self.open_cells().chain([self.apple])
+    }
+
     pub fn cell_occupant(&self, cell: Cell) -> Option<Occupant> {
         if self.apple == cell {
             return Some(Occupant::Apple);
